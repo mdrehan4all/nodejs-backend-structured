@@ -1,0 +1,69 @@
+const database = require("../database");
+const sha256 = require("../utils/sha256");
+
+exports.getUser = (req, res) => {
+  res.send({ data: "User data" });
+};
+
+exports.userLogin = async (req, res) => {
+  let body = req.body;
+  let email = body.email;
+  let password = body.password;
+  let password_sha256 = sha256(password);
+
+  let result = await database.loginUser(email, password_sha256);
+
+  res.status(200);
+  res.send(result);
+};
+
+exports.userSignup = async (req, res) => {
+  let body = req.body;
+  let name = body.name;
+  let email = body.email;
+  let password = body.password;
+  let password_sha256 = sha256(password);
+
+  let user = await database.addUser(email, password_sha256, name);
+
+  res.status(200);
+  res.send(user);
+};
+
+exports.userInfo = async (req, res) => {
+  const token =
+    req.headers.authorization && req.headers.authorization.split(" ")[1];
+  let user = await database.getUserByToken(token);
+  if (user[0] === undefined) {
+    res.send({ status: 0, messaage: "Not logged" }).status(200);
+  }
+  user[0].status = 1;
+  user[0].messaage = "Logged";
+  res.send(user[0]).status(200);
+};
+
+exports.getUserById = async (req, res) => {
+  let id = req.params.id;
+  let user = await database.getUser(id);
+  res.status(200);
+  res.send(user);
+};
+
+exports.getAllUsers = async (req, res) => {
+  let users = await database.getUsers();
+  res.status(200);
+  res.send(users);
+};
+
+exports.userDelete = async (req, res) => {
+  let id = req.params.id;
+  if (id == 1) {
+    // ID 1 is admin
+    res.status(200);
+    res.send({ error: "not allowed" });
+    return;
+  }
+  let user = await database.removeUser(id);
+  res.status(200);
+  res.send(user);
+};
